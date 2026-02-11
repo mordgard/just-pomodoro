@@ -23,6 +23,11 @@ mkdir -p "${TEMP_DIR}"
 # Copy app bundle
 cp -r "${APP_BUNDLE}" "${TEMP_DIR}/"
 
+# Copy installation instructions
+if [ -f "INSTALL_INSTRUCTIONS.md" ]; then
+    cp "INSTALL_INSTRUCTIONS.md" "${TEMP_DIR}/README.txt"
+fi
+
 # Create Applications symlink
 ln -s /Applications "${TEMP_DIR}/Applications"
 
