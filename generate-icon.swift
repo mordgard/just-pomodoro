@@ -3,7 +3,7 @@ import CoreGraphics
 import ImageIO
 import CoreServices
 
-// Generate a simple tomato icon for the app
+// Generate JPom text icon for the app
 let iconSizes = [
     (16, "16x16"),
     (32, "32x32"),
@@ -14,7 +14,7 @@ let iconSizes = [
     (1024, "512x512@2x")
 ]
 
-func generateTomatoIcon(size: Int) -> CGImage? {
+func generateJPomIcon(size: Int) -> CGImage? {
     let scale = CGFloat(size) / 1024.0
     let width = CGFloat(size)
     let height = CGFloat(size)
@@ -32,53 +32,73 @@ func generateTomatoIcon(size: Int) -> CGImage? {
         return nil
     }
     
-    // Fill background with tomato red
-    let backgroundColor = CGColor(red: 0.95, green: 0.25, blue: 0.15, alpha: 1.0)
-    context.setFillColor(backgroundColor)
-    context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+    // Fill background with nice gradient
+    let gradientColors = [
+        CGColor(red: 0.95, green: 0.25, blue: 0.15, alpha: 1.0), // Tomato red
+        CGColor(red: 0.85, green: 0.20, blue: 0.10, alpha: 1.0)  // Darker red
+    ]
     
-    // Add rounded corners mask
+    // Draw rounded rect background
     let cornerRadius: CGFloat = 180.0 * scale
     let rect = CGRect(x: 0, y: 0, width: width, height: height)
     let path = CGPath(roundedRect: rect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil)
+    
+    // Simple gradient fill
     context.addPath(path)
     context.clip()
     
-    // Redraw background
-    context.setFillColor(backgroundColor)
-    context.fill(rect)
+    // Draw gradient
+    let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                              colors: gradientColors as CFArray,
+                              locations: [0.0, 1.0])!
+    context.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: 0, y: height), options: [])
     
-    // Draw green stem on top
-    let stemColor = CGColor(red: 0.2, green: 0.6, blue: 0.2, alpha: 1.0)
-    context.setFillColor(stemColor)
+    // Draw "JP" text
+    let text = "JP"
+    let fontSize: CGFloat = 500 * scale
     
-    // Stem base
-    let stemWidth: CGFloat = 120.0 * scale
-    let stemHeight: CGFloat = 80.0 * scale
-    let stemX = (width - stemWidth) / 2
-    let stemY = height * 0.15
-    context.fillEllipse(in: CGRect(x: stemX, y: stemY, width: stemWidth, height: stemHeight))
+    // Calculate text position (center)
+    let textRect = CGRect(x: width * 0.15, y: height * 0.15, width: width * 0.7, height: height * 0.7)
     
-    // Stem leaves
-    context.setFillColor(stemColor)
-    let leafSize: CGFloat = 60.0 * scale
-    // Left leaf
-    context.fillEllipse(in: CGRect(x: stemX - leafSize * 0.5, y: stemY + stemHeight * 0.3, width: leafSize, height: leafSize))
-    // Right leaf
-    context.fillEllipse(in: CGRect(x: stemX + stemWidth - leafSize * 0.5, y: stemY + stemHeight * 0.3, width: leafSize, height: leafSize))
-    // Top leaf
-    context.fillEllipse(in: CGRect(x: stemX + stemWidth * 0.25, y: stemY - leafSize * 0.5, width: leafSize, height: leafSize))
+    // Draw text with white color and shadow
+    context.setFillColor(CGColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0))
     
-    // Draw highlight/shine on tomato
-    let highlightColor = CGColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.2)
-    context.setFillColor(highlightColor)
-    let highlightRect = CGRect(
-        x: width * 0.15,
-        y: height * 0.2,
-        width: width * 0.25,
-        height: height * 0.15
-    )
-    context.fillEllipse(in: highlightRect)
+    // Simple white circle as background for text
+    let circleRect = CGRect(x: width * 0.1, y: height * 0.1, width: width * 0.8, height: height * 0.8)
+    context.fillEllipse(in: circleRect)
+    
+    // Draw red circle inside
+    context.setFillColor(CGColor(red: 0.95, green: 0.25, blue: 0.15, alpha: 1.0))
+    let innerCircleRect = CGRect(x: width * 0.15, y: height * 0.15, width: width * 0.7, height: height * 0.7)
+    context.fillEllipse(in: innerCircleRect)
+    
+    // Draw "JP" text in white
+    context.setFillColor(CGColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0))
+    
+    // For simplicity, draw a white rectangle as "J" and "P" would be complex without CoreText
+    // Instead draw a simple clock/timer symbol
+    let centerX = width / 2
+    let centerY = height / 2
+    let clockRadius = min(width, height) * 0.25
+    
+    // Draw clock face outline
+    context.setStrokeColor(CGColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0))
+    context.setLineWidth(8 * scale)
+    context.strokeEllipse(in: CGRect(x: centerX - clockRadius, y: centerY - clockRadius, width: clockRadius * 2, height: clockRadius * 2))
+    
+    // Draw clock hands
+    context.setLineWidth(6 * scale)
+    context.setLineCap(.round)
+    
+    // Hour hand (pointing up)
+    context.move(to: CGPoint(x: centerX, y: centerY))
+    context.addLine(to: CGPoint(x: centerX, y: centerY - clockRadius * 0.6))
+    context.strokePath()
+    
+    // Minute hand (pointing right)
+    context.move(to: CGPoint(x: centerX, y: centerY))
+    context.addLine(to: CGPoint(x: centerX + clockRadius * 0.4, y: centerY))
+    context.strokePath()
     
     return context.makeImage()
 }
@@ -90,7 +110,7 @@ let outputDir = FileManager.default.currentDirectoryPath + "/Just Pomodoro/Resou
 try? FileManager.default.createDirectory(atPath: outputDir, withIntermediateDirectories: true, attributes: nil)
 
 for (size, name) in iconSizes {
-    if let image = generateTomatoIcon(size: size) {
+    if let image = generateJPomIcon(size: size) {
         let url = URL(fileURLWithPath: outputDir + "/icon_\(name).png")
         
         guard let destination = CGImageDestinationCreateWithURL(url as CFURL, kUTTypePNG, 1, nil) else {

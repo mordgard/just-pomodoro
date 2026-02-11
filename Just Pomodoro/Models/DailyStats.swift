@@ -82,6 +82,11 @@ final class DailyStatsManager: ObservableObject {
         }
     }
     
+    func resetStats() {
+        stats = .zero
+        saveStats()
+    }
+    
     private func saveStats() {
         if let encoded = try? JSONEncoder().encode(stats) {
             UserDefaults.standard.set(encoded, forKey: statsKey)

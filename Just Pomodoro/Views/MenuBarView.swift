@@ -104,9 +104,21 @@ struct TimerContentView: View {
             
             // Daily Stats
             VStack(alignment: .leading, spacing: 6) {
-                Text("Today")
-                    .font(.system(size: 11, weight: .semibold))
+                HStack {
+                    Text("Today")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    
+                    Spacer()
+                    
+                    Button(action: { viewModel.resetDailyStats() }) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 10))
+                    }
+                    .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
+                    .help("Reset today's statistics")
+                }
                 
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 2) {

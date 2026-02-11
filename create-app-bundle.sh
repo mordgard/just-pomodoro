@@ -22,6 +22,12 @@ cp "${BUILD_DIR}/JustPomodoro" "${APP_BUNDLE}/Contents/MacOS/"
 # Copy resources
 cp -r "Just Pomodoro/Resources/Assets.xcassets" "${APP_BUNDLE}/Contents/Resources/"
 
+# Copy icon file if it exists
+if [ -f "iconfile.icns" ]; then
+    cp "iconfile.icns" "${APP_BUNDLE}/Contents/Resources/AppIcon.icns"
+    echo "Copied icon file"
+fi
+
 # Compile asset catalog to generate Assets.car (required for app icon)
 if command -v actool &> /dev/null; then
     echo "Compiling asset catalog..."
@@ -65,8 +71,6 @@ cat > "${APP_BUNDLE}/Contents/Info.plist" << EOF
     <key>NSAccentColorName</key>
     <string>AccentColor</string>
     <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>CFBundleIconName</key>
     <string>AppIcon</string>
 </dict>
 </plist>

@@ -91,6 +91,11 @@ extension TimerViewModel {
         saveSettings()
     }
     
+    func resetDailyStats() {
+        dailyStatsManager.resetStats()
+        updateDailyStats()
+    }
+    
 }
 
 // MARK: - Private Methods
