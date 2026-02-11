@@ -16,6 +16,23 @@ A lightweight, native macOS menu bar Pomodoro timer built with SwiftUI.
 - **Liquid Glass Support**: Beautiful glass morphism effects on macOS 26+
 - **Menu Bar Timer**: Optional countdown display in the menu bar
 
+## Screenshots
+
+### Timer View
+The main timer interface showing current session, time remaining, and progress.
+
+![Timer View](Screenshots/timer-view.png)
+
+### Settings View
+Customize work/break durations, automation options, and alerts.
+
+![Settings View](Screenshots/settings-view.png)
+
+### Daily Statistics
+Track your productivity with daily work time, break time, and total hours.
+
+![Daily Statistics](Screenshots/daily-stats.png)
+
 ## Requirements
 
 - macOS 15.0 or later
