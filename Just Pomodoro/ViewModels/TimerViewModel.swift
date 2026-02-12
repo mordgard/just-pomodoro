@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import UserNotifications
+import OSLog
 
 // MARK: - Constants
 private enum Constants {
@@ -10,22 +11,35 @@ private enum Constants {
 
 // MARK: - Timer View Model
 @MainActor
-final class TimerViewModel: ObservableObject {
-    @Published private(set) var timerState: TimerState = .idle
-    @Published private(set) var currentSessionType: SessionType = .work
-    @Published private(set) var timeRemaining: Int = 25 * 60
-    @Published private(set) var timeString: String = "25:00"
-    @Published private(set) var completedSessions: Int = 0
-    @Published var isShowingSettings: Bool = false
-    @Published var settings: PomodoroSettings = .default
-    @Published var dailyStats: DailyStats = .zero
-    @Published var isPopoverVisible: Bool = false
+@Observable
+final class TimerViewModel {
+    private(set) var timerState: TimerState = .idle
+    private(set) var currentSessionType: SessionType = .work
+    private(set) var timeRemaining: Int = 25 * 60
+    private(set) var timeString: String = "25:00"
+    private(set) var completedSessions: Int = 0
+    var isShowingSettings: Bool = false
+    var settings: PomodoroSettings = .default
+    var dailyStats: DailyStats = .zero
+    var isPopoverVisible: Bool = false
     
+    @ObservationIgnored
     private var timer: Timer?
+    
+    @ObservationIgnored
     private var lastTimeString: String = "25:00"
+    
+    @ObservationIgnored
     private let notificationService: NotificationServiceProtocol
+    
+    @ObservationIgnored
     private let soundService: SoundServiceProtocol
+    
+    @ObservationIgnored
     private let dailyStatsManager: DailyStatsManager
+    
+    @ObservationIgnored
+    private let logger = Logger(subsystem: "com.justpomodoro", category: "TimerViewModel")
     
     init(
         notificationService: NotificationServiceProtocol = NotificationService(),
@@ -41,30 +55,20 @@ final class TimerViewModel: ObservableObject {
         updateDailyStats()
     }
     
-    deinit {
-        // Timer must be invalidated on the main thread
-        // Since deinit can't be async, we schedule it on main queue
-        if let timer = timer {
-            DispatchQueue.main.async {
-                timer.invalidate()
-            }
-        }
-    }
-}
-
-// MARK: - Public Methods
-extension TimerViewModel {
-    func startTimer() {
-        guard timerState != .running else { return }
-        
-        // Check if we need to reset stats (new day)
-        dailyStatsManager.resetIfNeeded()
-        updateDailyStats()
-        
-        timerState = .running
-        timer = Timer.scheduledTimer(withTimeInterval: Constants.timerInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.tick()
+    nonisolated func startTimer() {
+        Task { @MainActor in
+            guard timerState != .running else { return }
+            
+            // Check if we need to reset stats (new day)
+            dailyStatsManager.resetIfNeeded()
+            updateDailyStats()
+            
+            timerState = .running
+            timer = Timer.scheduledTimer(withTimeInterval: Constants.timerInterval, repeats: true) { [weak self] _ in
+                guard let self else { return }
+                Task { @MainActor in
+                    self.tick()
+                }
             }
         }
     }
@@ -98,28 +102,28 @@ extension TimerViewModel {
         updateDailyStats()
     }
     
-}
-
-// MARK: - Private Methods
-private extension TimerViewModel {
-    func loadSettings() {
-        guard let data = UserDefaults.standard.data(forKey: Constants.settingsKey),
-              let decoded = try? JSONDecoder().decode(PomodoroSettings.self, from: data) else {
-            return
+    private func loadSettings() {
+        if let data = UserDefaults.standard.data(forKey: Constants.settingsKey) {
+            do {
+                let decoded = try JSONDecoder().decode(PomodoroSettings.self, from: data)
+                settings = decoded
+                updateTimeRemaining()
+            } catch {
+                logger.error("Failed to decode settings: \(error.localizedDescription)")
+            }
         }
-        settings = decoded
-        updateTimeRemaining()
     }
     
-    func saveSettings() {
-        guard let encoded = try? JSONEncoder().encode(settings) else {
-            print("Failed to encode settings")
-            return
+    private func saveSettings() {
+        do {
+            let encoded = try JSONEncoder().encode(settings)
+            UserDefaults.standard.set(encoded, forKey: Constants.settingsKey)
+        } catch {
+            logger.error("Failed to encode settings: \(error.localizedDescription)")
         }
-        UserDefaults.standard.set(encoded, forKey: Constants.settingsKey)
     }
     
-    func updateTimeRemaining() {
+    private func updateTimeRemaining() {
         let duration: Int
         switch currentSessionType {
         case .work:
@@ -138,27 +142,27 @@ private extension TimerViewModel {
         let seconds = timeRemaining % 60
         let newTimeString = String(format: "%02d:%02d", minutes, seconds)
         
-        // Only update timeString if popover is visible or it's the first update
-        // This prevents unnecessary SwiftUI view updates when popover is closed
         if isPopoverVisible || timeString != newTimeString {
             timeString = newTimeString
         }
     }
     
-    func updateDailyStats() {
+    private func updateDailyStats() {
         dailyStats = dailyStatsManager.stats
     }
     
-    func requestNotificationPermissions() {
-        notificationService.requestAuthorization()
+    private func requestNotificationPermissions() {
+        Task {
+            await notificationService.requestAuthorization()
+        }
     }
     
-    func invalidateTimer() {
+    private func invalidateTimer() {
         timer?.invalidate()
         timer = nil
     }
     
-    func tick() {
+    private func tick() {
         guard timeRemaining > 0 else {
             completeSession()
             return
@@ -167,42 +171,39 @@ private extension TimerViewModel {
         updateTimeString()
     }
     
-    func completeSession() {
+    private func completeSession() {
         invalidateTimer()
         
-        // Track the completed session time
         trackCompletedSession()
         
-        // Play sound if enabled
         if settings.soundEnabled {
             soundService.playCompletionSound()
         }
         
-        // Send notification if enabled
         if settings.notificationsEnabled {
-            notificationService.sendSessionCompleteNotification(sessionType: currentSessionType, soundEnabled: settings.soundEnabled)
+            Task {
+                await notificationService.sendSessionCompleteNotification(
+                    sessionType: currentSessionType,
+                    soundEnabled: settings.soundEnabled
+                )
+            }
         }
         
-        // Update session tracking
         if currentSessionType == .work {
             completedSessions += 1
         }
         
-        // Determine next session type
         let previousSessionType = currentSessionType
         determineNextSession()
         
-        // Set state to idle BEFORE checking auto-start
-        // This allows startTimer() to actually start
         timerState = .idle
         
-        // Auto-start if configured based on what we're transitioning TO
         if shouldAutoStartForTransition(from: previousSessionType, to: currentSessionType) {
             startTimer()
         }
     }
     
-    func trackCompletedSession() {
+    private func trackCompletedSession() {
         let duration: Int
         switch currentSessionType {
         case .work:
@@ -218,9 +219,7 @@ private extension TimerViewModel {
         updateDailyStats()
     }
     
-    func shouldAutoStartForTransition(from: SessionType, to: SessionType) -> Bool {
-        // When transitioning TO a break session, check autoStartBreaks
-        // When transitioning TO a work session, check autoStartWork
+    private func shouldAutoStartForTransition(from: SessionType, to: SessionType) -> Bool {
         switch to {
         case .work:
             return settings.autoStartWork
@@ -242,10 +241,7 @@ private extension TimerViewModel {
         }
         updateTimeRemaining()
     }
-}
-
-// MARK: - Computed Properties
-extension TimerViewModel {
+    
     var progress: Double {
         let totalTime: Int
         switch currentSessionType {

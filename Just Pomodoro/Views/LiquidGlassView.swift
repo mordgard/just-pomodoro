@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - Liquid Glass Support for macOS 26+
 // This provides glass morphism effects for newer macOS versions
+// Falls back gracefully on macOS 15
 
 @available(macOS 26.0, *)
 struct LiquidGlassBackground: ViewModifier {

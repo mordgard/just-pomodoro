@@ -1,32 +1,42 @@
 import UserNotifications
+import OSLog
 
-// MARK: - Protocol for testability
-protocol NotificationServiceProtocol {
-    func requestAuthorization()
-    func sendSessionCompleteNotification(sessionType: SessionType, soundEnabled: Bool)
+// MARK: - Notification Service Protocol
+protocol NotificationServiceProtocol: Sendable {
+    func requestAuthorization() async
+    func sendSessionCompleteNotification(sessionType: SessionType, soundEnabled: Bool) async
 }
 
 // MARK: - Notification Service
-final class NotificationService: NotificationServiceProtocol {
+@preconcurrency
+final class NotificationService: NotificationServiceProtocol, Sendable {
+    private let logger = Logger(subsystem: "com.justpomodoro", category: "NotificationService")
+    
     private var isAvailable: Bool {
         // Check if we're running in a proper app bundle
         Bundle.main.bundleIdentifier != nil
     }
     
-    func requestAuthorization() {
+    func requestAuthorization() async {
         guard isAvailable else {
-            print("Notifications not available - not running in app bundle")
+            logger.warning("Notifications not available - not running in app bundle")
             return
         }
         
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
-            if let error = error {
-                print("Notification authorization error: \(error)")
+        do {
+            let granted = try await UNUserNotificationCenter.current()
+                .requestAuthorization(options: [.alert, .sound])
+            if granted {
+                logger.info("Notification authorization granted")
+            } else {
+                logger.warning("Notification authorization denied")
             }
+        } catch {
+            logger.error("Notification authorization error: \(error.localizedDescription)")
         }
     }
     
-    func sendSessionCompleteNotification(sessionType: SessionType, soundEnabled: Bool) {
+    func sendSessionCompleteNotification(sessionType: SessionType, soundEnabled: Bool) async {
         guard isAvailable else { return }
         
         let content = UNMutableNotificationContent()
@@ -54,10 +64,10 @@ final class NotificationService: NotificationServiceProtocol {
             trigger: nil
         )
         
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("Failed to schedule notification: \(error)")
-            }
+        do {
+            try await UNUserNotificationCenter.current().add(request)
+        } catch {
+            logger.error("Failed to schedule notification: \(error.localizedDescription)")
         }
     }
 }

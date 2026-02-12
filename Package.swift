@@ -1,10 +1,10 @@
-// swift-tools-version:5.9
+// swift-tools-version:6.0
 import PackageDescription
 
 let package = Package(
     name: "JustPomodoro",
     platforms: [
-        .macOS("15.0")
+        .macOS(.v15)
     ],
     products: [
         .executable(
@@ -20,10 +20,11 @@ let package = Package(
             path: "Just Pomodoro",
             exclude: ["Resources/Info.plist"],
             resources: [
-                .process("Just Pomodoro/Resources/Assets.xcassets")
+                .process("Resources/Assets.xcassets")
             ],
             swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
+                .swiftLanguageMode(.v6),
+                .enableUpcomingFeature("StrictConcurrency")
             ]
         )
     ]

@@ -1,5 +1,5 @@
 import SwiftUI
-import Combine
+import Observation
 
 // MARK: - App Delegate
 @MainActor
@@ -17,11 +17,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 // MARK: - Status Bar Controller
 @MainActor
-final class StatusBarController: ObservableObject {
+final class StatusBarController {
     private let statusItem: NSStatusItem
     private let popover: NSPopover
     private let viewModel: TimerViewModel
-    private var cancellables = Set<AnyCancellable>()
+    private var menuBarUpdateTimer: Timer?
     
     init() {
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -30,10 +30,12 @@ final class StatusBarController: ObservableObject {
         
         setupStatusBar()
         setupPopover()
+        startMenuBarUpdates()
     }
     
-    deinit {
-        cancellables.removeAll()
+    nonisolated deinit {
+        // Timer will be invalidated automatically when the run loop is torn down
+        // No need to manually invalidate in deinit for UI timers
     }
 }
 
@@ -45,36 +47,21 @@ private extension StatusBarController {
         button.image = NSImage(systemSymbolName: "timer", accessibilityDescription: "Pomodoro Timer")
         button.action = #selector(togglePopover)
         button.target = self
-        
-        // Subscribe to timeString changes
-        viewModel.$timeString
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+    }
+    
+    func startMenuBarUpdates() {
+        // Update menu bar every second to reflect timer changes
+        menuBarUpdateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
                 self?.updateMenuBarTitle()
-            }
-            .store(in: &cancellables)
-        
-        // Subscribe to timerState changes
-        viewModel.$timerState
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
                 self?.updateMenuBarIcon()
             }
-            .store(in: &cancellables)
-        
-        // Subscribe to settings changes
-        viewModel.$settings
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateMenuBarTitle()
-            }
-            .store(in: &cancellables)
+        }
     }
     
     func updateMenuBarTitle() {
         guard let button = statusItem.button else { return }
         
-        // Only show timer if setting is enabled AND timer is running
         if viewModel.settings.showTimerInMenuBar && viewModel.timerState == .running {
             button.title = " \(viewModel.timeString)"
         } else {
@@ -108,7 +95,7 @@ private extension StatusBarController {
     func setupPopover() {
         popover.contentSize = NSSize(width: 320, height: 480)
         popover.behavior = .transient
-        popover.contentViewController = NSHostingController(rootView: MenuBarView(viewModel: self.viewModel))
+        popover.contentViewController = NSHostingController(rootView: MenuBarView(viewModel: viewModel))
     }
     
     @objc func togglePopover() {

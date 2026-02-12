@@ -1,12 +1,14 @@
 import Foundation
 
-enum TimerState: String, Codable {
+// MARK: - Timer State
+enum TimerState: String, Codable, Sendable {
     case idle
     case running
     case paused
 }
 
-enum SessionType: String, Codable, CaseIterable {
+// MARK: - Session Type
+enum SessionType: String, Codable, CaseIterable, Sendable {
     case work = "Work"
     case shortBreak = "Short Break"
     case longBreak = "Long Break"
@@ -34,7 +36,8 @@ enum SessionType: String, Codable, CaseIterable {
     }
 }
 
-struct PomodoroSession: Identifiable, Codable {
+// MARK: - Pomodoro Session
+struct PomodoroSession: Identifiable, Codable, Sendable {
     let id: UUID
     let type: SessionType
     let startTime: Date

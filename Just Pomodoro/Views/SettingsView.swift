@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @ObservedObject var viewModel: TimerViewModel
+    @Bindable var viewModel: TimerViewModel
     @Binding var isPresented: Bool
     @State private var settings: PomodoroSettings
     

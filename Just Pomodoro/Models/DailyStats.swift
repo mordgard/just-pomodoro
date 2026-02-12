@@ -1,7 +1,8 @@
 import Foundation
+import OSLog
 
 // MARK: - Daily Stats
-struct DailyStats: Codable {
+struct DailyStats: Codable, Sendable {
     var workTimeMinutes: Int
     var breakTimeMinutes: Int
     var lastTrackedDate: Date
@@ -43,20 +44,27 @@ struct DailyStats: Codable {
 
 // MARK: - Daily Stats Manager
 @MainActor
-final class DailyStatsManager: ObservableObject {
-    @Published private(set) var stats: DailyStats
+@Observable
+final class DailyStatsManager {
+    private(set) var stats: DailyStats
     
     private let statsKey = "dailyStats"
+    private let logger = Logger(subsystem: "com.justpomodoro", category: "DailyStatsManager")
     
     init() {
-        if let data = UserDefaults.standard.data(forKey: statsKey),
-           let decoded = try? JSONDecoder().decode(DailyStats.self, from: data) {
-            // Check if it's from today, if not reset
-            if decoded.isFromToday() {
-                self.stats = decoded
-            } else {
+        if let data = UserDefaults.standard.data(forKey: statsKey) {
+            do {
+                let decoded = try JSONDecoder().decode(DailyStats.self, from: data)
+                // Check if it's from today, if not reset
+                if decoded.isFromToday() {
+                    self.stats = decoded
+                } else {
+                    self.stats = .zero
+                    saveStats()
+                }
+            } catch {
+                logger.error("Failed to decode daily stats: \(error.localizedDescription)")
                 self.stats = .zero
-                saveStats()
             }
         } else {
             self.stats = .zero
@@ -88,8 +96,11 @@ final class DailyStatsManager: ObservableObject {
     }
     
     private func saveStats() {
-        if let encoded = try? JSONEncoder().encode(stats) {
+        do {
+            let encoded = try JSONEncoder().encode(stats)
             UserDefaults.standard.set(encoded, forKey: statsKey)
+        } catch {
+            logger.error("Failed to encode daily stats: \(error.localizedDescription)")
         }
     }
 }

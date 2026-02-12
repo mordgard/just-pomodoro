@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MenuBarView: View {
-    @StateObject var viewModel: TimerViewModel
+    @State var viewModel: TimerViewModel
     @State private var showingSettings = false
     
     var body: some View {
@@ -17,7 +17,7 @@ struct MenuBarView: View {
 }
 
 struct TimerContentView: View {
-    @ObservedObject var viewModel: TimerViewModel
+    @Bindable var viewModel: TimerViewModel
     @Binding var showingSettings: Bool
     
     var body: some View {
