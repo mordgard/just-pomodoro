@@ -116,9 +116,11 @@ private extension StatusBarController {
         
         if popover.isShown {
             popover.performClose(nil)
+            viewModel.isPopoverVisible = false
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
             popover.contentViewController?.view.window?.makeKey()
+            viewModel.isPopoverVisible = true
         }
     }
 }

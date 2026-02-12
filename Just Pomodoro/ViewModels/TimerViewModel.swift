@@ -19,8 +19,10 @@ final class TimerViewModel: ObservableObject {
     @Published var isShowingSettings: Bool = false
     @Published var settings: PomodoroSettings = .default
     @Published var dailyStats: DailyStats = .zero
+    @Published var isPopoverVisible: Bool = false
     
     private var timer: Timer?
+    private var lastTimeString: String = "25:00"
     private let notificationService: NotificationServiceProtocol
     private let soundService: SoundServiceProtocol
     private let dailyStatsManager: DailyStatsManager
@@ -134,7 +136,13 @@ private extension TimerViewModel {
     func updateTimeString() {
         let minutes = timeRemaining / 60
         let seconds = timeRemaining % 60
-        timeString = String(format: "%02d:%02d", minutes, seconds)
+        let newTimeString = String(format: "%02d:%02d", minutes, seconds)
+        
+        // Only update timeString if popover is visible or it's the first update
+        // This prevents unnecessary SwiftUI view updates when popover is closed
+        if isPopoverVisible || timeString != newTimeString {
+            timeString = newTimeString
+        }
     }
     
     func updateDailyStats() {

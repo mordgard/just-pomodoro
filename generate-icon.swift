@@ -3,7 +3,7 @@ import CoreGraphics
 import ImageIO
 import CoreServices
 
-// Generate JPom text icon for the app
+// Generate JPom text icon for the app with proper macOS icon sizing
 let iconSizes = [
     (16, "16x16"),
     (32, "32x32"),
@@ -15,11 +15,10 @@ let iconSizes = [
 ]
 
 func generateJPomIcon(size: Int) -> CGImage? {
-    let scale = CGFloat(size) / 1024.0
     let width = CGFloat(size)
     let height = CGFloat(size)
     
-    // Create context
+    // Create context with better quality settings
     guard let context = CGContext(
         data: nil,
         width: size,
@@ -32,8 +31,12 @@ func generateJPomIcon(size: Int) -> CGImage? {
         return nil
     }
     
-    // Add padding like other macOS app icons (about 10% on each side)
-    let padding: CGFloat = width * 0.08
+    // Enable anti-aliasing for smoother edges
+    context.setShouldAntialias(true)
+    context.setAllowsAntialiasing(true)
+    
+    // macOS app icons have about 15% padding (template icon size is smaller than canvas)
+    let padding: CGFloat = width * 0.12
     let contentWidth = width - (padding * 2)
     let contentHeight = height - (padding * 2)
     
@@ -44,23 +47,29 @@ func generateJPomIcon(size: Int) -> CGImage? {
     ]
     
     // Draw rounded rect background with padding
-    let cornerRadius: CGFloat = 180.0 * scale
+    // Corner radius should scale with icon size but not be too large
+    let cornerRadius: CGFloat = min(contentWidth, contentHeight) * 0.22
     let rect = CGRect(x: padding, y: padding, width: contentWidth, height: contentHeight)
     let path = CGPath(roundedRect: rect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil)
     
-    // Simple gradient fill
+    // Save context state before clipping
+    context.saveGState()
+    
+    // Draw gradient background
     context.addPath(path)
     context.clip()
     
-    // Draw gradient
     let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
                               colors: gradientColors as CFArray,
                               locations: [0.0, 1.0])!
     context.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: 0, y: height), options: [])
     
-    // Draw white circle as background for clock (centered in padded area)
+    // Restore context state
+    context.restoreGState()
+    
+    // Draw white circle as background for clock (centered in padded area, slightly smaller)
     context.setFillColor(CGColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0))
-    let circleSize = min(contentWidth, contentHeight) * 0.8
+    let circleSize = min(contentWidth, contentHeight) * 0.75 // Slightly smaller circle
     let circleRect = CGRect(
         x: padding + (contentWidth - circleSize) / 2,
         y: padding + (contentHeight - circleSize) / 2,
@@ -71,7 +80,7 @@ func generateJPomIcon(size: Int) -> CGImage? {
     
     // Draw red circle inside
     context.setFillColor(CGColor(red: 0.95, green: 0.25, blue: 0.15, alpha: 1.0))
-    let innerCircleSize = circleSize * 0.875
+    let innerCircleSize = circleSize * 0.85
     let innerCircleRect = CGRect(
         x: padding + (contentWidth - innerCircleSize) / 2,
         y: padding + (contentHeight - innerCircleSize) / 2,
@@ -83,25 +92,26 @@ func generateJPomIcon(size: Int) -> CGImage? {
     // Draw clock/timer symbol (centered in padded area)
     let centerX = padding + contentWidth / 2
     let centerY = padding + contentHeight / 2
-    let clockRadius = min(contentWidth, contentHeight) * 0.23
+    let clockRadius = min(contentWidth, contentHeight) * 0.20 // Slightly smaller
     
-    // Draw clock face outline
+    // Draw clock face outline with thicker lines for better visibility
     context.setStrokeColor(CGColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0))
-    context.setLineWidth(8 * scale)
+    context.setLineWidth(max(2.0, CGFloat(size) / 128.0)) // Scale line width with icon size, minimum 2px
     context.strokeEllipse(in: CGRect(x: centerX - clockRadius, y: centerY - clockRadius, width: clockRadius * 2, height: clockRadius * 2))
     
-    // Draw clock hands
-    context.setLineWidth(6 * scale)
+    // Draw clock hands with appropriate thickness
+    context.setLineWidth(max(1.5, CGFloat(size) / 170.0))
     context.setLineCap(.round)
+    context.setLineJoin(.round)
     
-    // Hour hand (pointing up)
+    // Hour hand (pointing to 10 o'clock)
     context.move(to: CGPoint(x: centerX, y: centerY))
-    context.addLine(to: CGPoint(x: centerX, y: centerY - clockRadius * 0.6))
+    context.addLine(to: CGPoint(x: centerX - clockRadius * 0.35, y: centerY - clockRadius * 0.5))
     context.strokePath()
     
-    // Minute hand (pointing right)
+    // Minute hand (pointing to 2 o'clock)
     context.move(to: CGPoint(x: centerX, y: centerY))
-    context.addLine(to: CGPoint(x: centerX + clockRadius * 0.4, y: centerY))
+    context.addLine(to: CGPoint(x: centerX + clockRadius * 0.45, y: centerY - clockRadius * 0.35))
     context.strokePath()
     
     return context.makeImage()
