@@ -24,6 +24,8 @@ final class StatusBarController {
     private var menuBarUpdateTimer: Timer?
     
     init() {
+        // Use variable length for compact display
+        // Arrow will be dynamically positioned based on current content
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         self.popover = NSPopover()
         self.viewModel = TimerViewModel()
@@ -33,10 +35,8 @@ final class StatusBarController {
         startMenuBarUpdates()
     }
     
-    nonisolated deinit {
-        // Timer will be invalidated automatically when the run loop is torn down
-        // No need to manually invalidate in deinit for UI timers
-    }
+    // Note: StatusBarController lives for app lifetime
+    // Timer cleanup happens automatically on app termination
 }
 
 // MARK: - Private Methods
@@ -52,9 +52,10 @@ private extension StatusBarController {
     func startMenuBarUpdates() {
         // Update menu bar every second to reflect timer changes
         menuBarUpdateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.updateMenuBarTitle()
-                self?.updateMenuBarIcon()
+            guard let self else { return }
+            Task { @MainActor in
+                self.updateMenuBarTitle()
+                self.updateMenuBarIcon()
             }
         }
     }
@@ -93,7 +94,7 @@ private extension StatusBarController {
     }
     
     func setupPopover() {
-        popover.contentSize = NSSize(width: 320, height: 480)
+        popover.contentSize = NSSize(width: 300, height: 480)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: MenuBarView(viewModel: viewModel))
     }
@@ -105,7 +106,19 @@ private extension StatusBarController {
             popover.performClose(nil)
             viewModel.isPopoverVisible = false
         } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
+            // Calculate center of the button for arrow positioning
+            // Create a small rect at the center so arrow points to middle
+            let buttonWidth = button.bounds.width
+            let centerX = buttonWidth / 2
+            let arrowWidth: CGFloat = 1 // Very small width to force centering
+            let centerRect = NSRect(
+                x: centerX - (arrowWidth / 2),
+                y: 0,
+                width: arrowWidth,
+                height: button.bounds.height
+            )
+            
+            popover.show(relativeTo: centerRect, of: button, preferredEdge: NSRectEdge.minY)
             popover.contentViewController?.view.window?.makeKey()
             viewModel.isPopoverVisible = true
         }

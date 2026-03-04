@@ -154,6 +154,23 @@ struct TimerContentView: View {
                             .monospacedDigit()
                     }
                 }
+                
+                // Target progress
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Target: \(viewModel.settings.targetWorkHours)h")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(viewModel.targetProgressText)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(targetProgressColor)
+                    }
+                    ProgressView(value: min(viewModel.targetProgress, 1.0))
+                        .progressViewStyle(.linear)
+                        .tint(targetProgressColor)
+                }
+                .padding(.top, 4)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -188,6 +205,17 @@ struct TimerContentView: View {
         case .shortBreak:
             return .green
         case .longBreak:
+            return .blue
+        }
+    }
+    
+    private var targetProgressColor: Color {
+        let progress = viewModel.targetProgress
+        if progress >= 1.0 {
+            return .green
+        } else if progress >= 0.5 {
+            return .orange
+        } else {
             return .blue
         }
     }

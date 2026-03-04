@@ -12,6 +12,8 @@ struct PomodoroSettings: Codable, Sendable {
     var soundEnabled: Bool
     var notificationsEnabled: Bool
     var showTimerInMenuBar: Bool
+    var targetWorkHours: Int // daily target in hours
+    var includeBreaksInTarget: Bool // whether to include break time in target calculation
     
     static let `default` = PomodoroSettings(
         workDuration: 25,
@@ -22,7 +24,9 @@ struct PomodoroSettings: Codable, Sendable {
         autoStartWork: false,
         soundEnabled: true,
         notificationsEnabled: true,
-        showTimerInMenuBar: true
+        showTimerInMenuBar: true,
+        targetWorkHours: 8,
+        includeBreaksInTarget: false
     )
     
     static let minWorkDuration = 1
@@ -32,6 +36,8 @@ struct PomodoroSettings: Codable, Sendable {
     static let maxLongBreakDuration = 30
     static let minSessionsBeforeLongBreak = 2
     static let maxSessionsBeforeLongBreak = 8
+    static let minTargetWorkHours = 1
+    static let maxTargetWorkHours = 12
 }
 
 // MARK: - Settings Store

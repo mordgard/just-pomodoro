@@ -91,6 +91,29 @@ struct SettingsView: View {
                         }
                     }
                     
+                    // Daily Target Section
+                    settingsSection("Daily Target") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Target work time: \(settings.targetWorkHours) hours")
+                                .font(.system(size: 13))
+                            
+                            Slider(
+                                value: Binding(
+                                    get: { Double(settings.targetWorkHours) },
+                                    set: { settings.targetWorkHours = Int($0) }
+                                ),
+                                in: Double(PomodoroSettings.minTargetWorkHours)...Double(PomodoroSettings.maxTargetWorkHours),
+                                step: 1
+                            )
+                            .controlSize(.small)
+                            
+                            Toggle("Include breaks in target", isOn: $settings.includeBreaksInTarget)
+                                .font(.system(size: 13))
+                                .toggleStyle(.checkbox)
+                                .padding(.top, 4)
+                        }
+                    }
+                    
                     // Automation Section
                     settingsSection("Automation") {
                         VStack(alignment: .leading, spacing: 8) {

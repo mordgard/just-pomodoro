@@ -55,6 +55,9 @@ final class TimerViewModel {
         updateDailyStats()
     }
     
+    // Note: Timer cleanup happens in invalidateTimer() when timer stops
+    // ViewModel lives for app lifetime, so explicit deinit not required
+    
     nonisolated func startTimer() {
         Task { @MainActor in
             guard timerState != .running else { return }
@@ -260,5 +263,21 @@ final class TimerViewModel {
         let total = max(1, settings.sessionsBeforeLongBreak)
         let current = (completedSessions % total) + 1
         return "\(current) of \(total)"
+    }
+    
+    var targetProgress: Double {
+        let targetMinutes = settings.targetWorkHours * 60
+        guard targetMinutes > 0 else { return 0 }
+        
+        let completedMinutes = settings.includeBreaksInTarget 
+            ? dailyStats.totalTimeMinutes 
+            : dailyStats.workTimeMinutes
+        
+        return Double(completedMinutes) / Double(targetMinutes)
+    }
+    
+    var targetProgressText: String {
+        let percentage = Int(targetProgress * 100)
+        return "\(percentage)%"
     }
 }
