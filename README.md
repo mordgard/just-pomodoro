@@ -21,17 +21,39 @@ A lightweight, native macOS menu bar Pomodoro timer built with SwiftUI.
 ### Timer View
 The main timer interface showing current session, time remaining, and progress.
 
-![Timer View](Screenshots/timer-view.png)
+![Timer View](Screenshots/1.png)
+![Timer View](Screenshots/2.png)
 
 ### Settings View
 Customize work/break durations, automation options, and alerts.
 
-![Settings View](Screenshots/settings-view.png)
+![Settings View](Screenshots/3.png)
+![Settings View](Screenshots/4.png)
 
-### Daily Statistics
-Track your productivity with daily work time, break time, and total hours.
+## Installation
 
-![Daily Statistics](Screenshots/daily-stats.png)
+Since this app isn't signed with an Apple Developer certificate, macOS will show a security warning on first launch. Here's how to install it:
+
+### Method 1: Right-click to Open (Recommended)
+1. Download and open the DMG file
+2. Drag "Just Pomodoro.app" to your Applications folder
+3. **Right-click** (or Control+click) on "Just Pomodoro.app"
+4. Select **"Open"** from the menu
+5. Click **"Open"** in the security dialog
+
+That's it! After this one-time approval, the app will open normally forever.
+
+### Alternative Methods
+If Method 1 doesn't work:
+- **System Settings**: Go to System Settings → Privacy & Security → click "Open Anyway"
+- **Terminal**: Run `xattr -cr /Applications/Just\ Pomodoro.app`
+
+## Usage
+
+1. Click the timer icon in your menu bar
+2. Press play to start a work session
+3. The timer automatically transitions between work and break sessions
+4. Access settings via the gear icon to customize durations
 
 ## Requirements
 
@@ -77,31 +99,6 @@ Just Pomodoro/
     ├── JustPomodoro.entitlements
     └── Assets.xcassets/
 ```
-
-## Installation
-
-Since this app isn't signed with an Apple Developer certificate, macOS will show a security warning on first launch. Here's how to install it:
-
-### Method 1: Right-click to Open (Recommended)
-1. Download and open the DMG file
-2. Drag "Just Pomodoro.app" to your Applications folder
-3. **Right-click** (or Control+click) on "Just Pomodoro.app"
-4. Select **"Open"** from the menu
-5. Click **"Open"** in the security dialog
-
-That's it! After this one-time approval, the app will open normally forever.
-
-### Alternative Methods
-If Method 1 doesn't work:
-- **System Settings**: Go to System Settings → Privacy & Security → click "Open Anyway"
-- **Terminal**: Run `xattr -cr /Applications/Just\ Pomodoro.app`
-
-## Usage
-
-1. Click the timer icon in your menu bar
-2. Press play to start a work session
-3. The timer automatically transitions between work and break sessions
-4. Access settings via the gear icon to customize durations
 
 ## License
 
